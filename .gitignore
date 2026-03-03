@@ -1,0 +1,13 @@
+# executables
+server
+client
+*.out
+*.exe
+
+# build folders
+build/
+bin/
+
+# editor / OS files
+.vscode/
+*.log
