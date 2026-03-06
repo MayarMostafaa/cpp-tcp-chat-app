@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstring>
-#include <unistd.h>         // close()
-#include <arpa/inet.h>      // inet_pton()
+#include <unistd.h>         
+#include <arpa/inet.h>      
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstdio>
@@ -40,27 +40,27 @@ int main() {
 
     //Send Message
     std::string line;
-    while(true)
-    {
-        if(!std::getline(std::cin, line ))
-        {
-            std::cout<<"\nInput ended (EOF). Closing client...\n";
-            break;
-        }
-        if(line=="/quit")
-        {
+while (true) {
+    if (!std::getline(std::cin, line)) {
+        std::cout << "\nInput ended (EOF). Closing client\n";
+        break;
+    }
 
-            std::cout<<"Quitting \n";
-            break;
-        }
-        line+="\n";
-        if(send(sock_fd, line.c_str() , line.size() , 0)<0)
-        {
-            perror("send");
-            return 1;
-        }
-    }    
-    close(sock_fd);
+    if (line == "/quit") {
+        std::cout << "Quitting\n";
+        break;
+    }
+
+    line += "\n";
+
+    ssize_t sent = send(sock_fd, line.c_str(), line.size(), 0);
+    if (sent < 0) {
+        perror("send");
+        break;
+    }
+}
+
+close(sock_fd);
 
 
     return 0;
