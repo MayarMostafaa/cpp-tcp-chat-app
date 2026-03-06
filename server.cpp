@@ -60,11 +60,14 @@ int main() {
 
     //Recieve message
     char buffer[1024];
+    while(true)
+    {
     int byte = recv(client_fd , buffer , sizeof(buffer)-1 , 0);
     //buffer[byte] = "\0";
     if(byte > 0)
     {
-        std::cout<<"Message Recieved \n";
+        std::cout<<"Message Recieved is: "<< buffer <<"\n";
+
     }
     else if(byte == 0)
     {
@@ -77,7 +80,7 @@ int main() {
         close(client_fd);
     }
 
-
+    }
     close(client_fd);
     close(server_fd);
     return 0;

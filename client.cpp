@@ -39,14 +39,27 @@ int main() {
     std::cout << "Connected to server at " << ip << ":" << ntohs(server_addr.sin_port) << " \n";
 
     //Send Message
-    char msg[] = "Hello From Client";
-    if(send(sock_fd, msg , sizeof(msg) , 0)<=0)
+    std::string line;
+    while(true)
     {
-        perror("send");
-        return 1;
-    }       
-    std::cout<<"Message Sent Successfully\n";
+        if(!std::getline(std::cin, line ))
+        {
+            std::cout<<"\nInput ended (EOF). Closing client...\n";
+            break;
+        }
+        if(line=="/quit")
+        {
 
+            std::cout<<"Quitting \n";
+            break;
+        }
+        line+="\n";
+        if(send(sock_fd, line.c_str() , line.size() , 0)<0)
+        {
+            perror("send");
+            return 1;
+        }
+    }    
     close(sock_fd);
 
 
