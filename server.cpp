@@ -4,6 +4,7 @@
 #include <arpa/inet.h>      // inet_addr()
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstdio>
 
 int main() {
     const int PORT = 8080;
@@ -28,33 +29,54 @@ int main() {
 
     // Bind socket to port
     if (bind(server_fd, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr)) < 0) {
-        std::cerr << "Error: bind failed (is port " << PORT << " already in use?)\n";
+        perror("bind");
         close(server_fd);
         return 1;
     }
 
     // Listen for incoming connections
     if (listen(server_fd, 5) < 0) {
-        std::cerr << "Error: listen failed\n";
+        perror("listen");
         close(server_fd);
         return 1;
     }
 
     std::cout << "Server is listening on port " << PORT << "...\n";
-    std::cout << "Day 1 setup successful ✅\n";
+    
 
-    // For Day 1, just wait for one connection and close
+    
     sockaddr_in client_addr{};
     socklen_t client_len = sizeof(client_addr);
 
     int client_fd = accept(server_fd, reinterpret_cast<sockaddr*>(&client_addr), &client_len);
     if (client_fd < 0) {
-        std::cerr << "Error: accept failed\n";
+        perror("accept");
         close(server_fd);
         return 1;
     }
 
     std::cout << "Client connected!\n";
+
+
+    //Recieve message
+    char buffer[1024];
+    int byte = recv(client_fd , buffer , sizeof(buffer)-1 , 0);
+    //buffer[byte] = "\0";
+    if(byte > 0)
+    {
+        std::cout<<"Message Recieved \n";
+    }
+    else if(byte == 0)
+    {
+        std::cerr<<"Warning: Client Disconnected\n";
+        close(client_fd);
+    }
+    else
+    {
+        perror("recv");
+        close(client_fd);
+    }
+
 
     close(client_fd);
     close(server_fd);
