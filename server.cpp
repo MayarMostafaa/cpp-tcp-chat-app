@@ -5,6 +5,36 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstdio>
+#include <thread>
+
+void handle_clients(int client_fd,std::string client_ip,int client_port)
+    {
+    //Receive message
+    char buffer[1024];
+    while(true)
+    {
+    ssize_t byte = recv(client_fd , buffer , sizeof(buffer)-1 , 0);
+    
+    if(byte > 0)
+    {
+        buffer[byte] = '\0';
+        std::cout << "[" << client_ip << ":" << client_port << "] "
+          << buffer << " (" << byte << " bytes)\n";
+    }
+    else if(byte == 0)
+    {
+        std::cerr << "[" << client_ip << ":" << client_port << "] disconnected\n";
+        break;
+    }
+    else
+    {
+        perror("recv");
+        break;
+    }
+
+    }
+    close(client_fd);
+}
 
 int main() {
     const int PORT = 8080;
@@ -49,46 +79,34 @@ int main() {
     std::cout << "Server is listening on port " << PORT << "...\n";
     
 
-    
+    //Accept clients   
     sockaddr_in client_addr{};
-    socklen_t client_len = sizeof(client_addr);
     char ip[INET_ADDRSTRLEN];
-
+    std::string client_ip;
+    while(true)
+    {
+    socklen_t client_len = sizeof(client_addr);
     int client_fd = accept(server_fd, reinterpret_cast<sockaddr*>(&client_addr), &client_len);
-    if (client_fd < 0) {
+    if (client_fd < 0) 
+    {
         perror("accept");
         close(server_fd);
         return 1;
     }
-
-    std::cout << "Client connected from ip: "<< inet_ntop(AF_INET,&client_addr.sin_addr,ip,sizeof(ip))<<"\n";
-
-
-    //Receive message
-    char buffer[1024];
-    while(true)
+    const char * res = inet_ntop(AF_INET ,&client_addr.sin_addr ,ip ,sizeof(ip));
+    if(!res)
     {
-    ssize_t byte = recv(client_fd , buffer , sizeof(buffer)-1 , 0);
-    
-    if(byte > 0)
-    {
-        buffer[byte] = '\0';
-        std::cout<<"Received bytes: "<< byte << " , Received message is: " << buffer <<"\n";
-
-    }
-    else if(byte == 0)
-    {
-        std::cerr<<"Warning: Client Disconnected\n";
-        break;
+        perror("inet_ntop");
+        client_ip = "unknown";
     }
     else
     {
-        perror("recv");
-        break;
+        client_ip= ip;
     }
-
-    }
-    close(client_fd);
-    close(server_fd);
-    return 0;
+    int client_port = ntohs(client_addr.sin_port);
+    std::cout << "Client connected from "<< client_ip<<":"<<client_port<<"\n";
+    std::thread(handle_clients, client_fd, client_ip, client_port).detach();
+   }
+   return 0;
+    
 }
