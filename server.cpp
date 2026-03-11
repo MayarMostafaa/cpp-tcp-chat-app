@@ -6,6 +6,29 @@
 #include <netinet/in.h>
 #include <cstdio>
 #include <thread>
+#include <vector>
+
+std::vector <int> clients = {};
+
+void broadcast (int sender_fd,const std::string & msg)
+{
+    
+    for (int fd : clients)
+    {
+        if (fd==sender_fd) continue;
+        else
+        {
+           ssize_t bytes=send(fd,msg.c_str(),msg.size(),0);
+            if(bytes<0)
+            {
+                perror("send (broadcast)");
+                break;
+            }
+            
+
+        }
+    }
+}
 
 void handle_clients(int client_fd,std::string client_ip,int client_port)
     {
@@ -18,6 +41,7 @@ void handle_clients(int client_fd,std::string client_ip,int client_port)
     if(byte > 0)
     {
         buffer[byte] = '\0';
+        broadcast(client_fd,buffer);
         std::cout << "[" << client_ip << ":" << client_port << "] "
           << buffer << " (" << byte << " bytes)\n";
     }
@@ -83,6 +107,7 @@ int main() {
     sockaddr_in client_addr{};
     char ip[INET_ADDRSTRLEN];
     std::string client_ip;
+
     while(true)
     {
     socklen_t client_len = sizeof(client_addr);
@@ -105,7 +130,9 @@ int main() {
     }
     int client_port = ntohs(client_addr.sin_port);
     std::cout << "Client connected from "<< client_ip<<":"<<client_port<<"\n";
-    std::thread(handle_clients, client_fd, client_ip, client_port).detach();
+    clients.push_back(client_fd);
+     std::thread(handle_clients, client_fd, client_ip, client_port).detach();
+     
    }
    return 0;
     

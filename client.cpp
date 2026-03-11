@@ -5,6 +5,36 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstdio>
+#include <thread>
+std::string line;
+void receive_loop(int fd)
+{
+    const char * fdsock_IP="127.0.0.1";
+    sockaddr_in fd_addr{};
+    fd_addr.sin_family = AF_INET;
+    int res=inet_pton(AF_INET, fdsock_IP, &fd_addr.sin_addr);
+    char buffer[1024];
+    char fd_IP[INET_ADDRSTRLEN];
+    while(true)
+    {
+        size_t bytes=recv(fd, buffer ,sizeof(buffer)-1,0);
+        if(bytes>0)
+        {
+        buffer[bytes]='\0';
+        std::cout<<buffer<<"From"<<inet_ntop(AF_INET,&fd_addr.sin_addr,fd_IP,sizeof(fd_IP))<<":"<<ntohs(fd_addr.sin_port);
+        }
+        if(bytes==0)
+        {
+        std::cout<<"disconnected\n";
+        }
+        if(bytes < 0)
+        {
+        perror ("recv");
+        break;        
+        }
+        
+    }
+}
 
 int main() {
     const char* SERVER_IP = "127.0.0.1";
@@ -37,11 +67,15 @@ int main() {
 
     inet_ntop(AF_INET, &server_addr.sin_addr, ip ,sizeof(ip));
     std::cout << "Connected to server at " << ip << ":" << ntohs(server_addr.sin_port) << " \n";
-
+    
+    std::thread(receive_loop,sock_fd).detach();
+    
+    
     //Send Message
-    std::string line;
+    
 while (true) {
-    if (!std::getline(std::cin, line)) {
+    if (!std::getline(std::cin, line)) 
+    {
         std::cout << "\nInput ended (EOF). Closing client\n";
         break;
     }
@@ -58,7 +92,12 @@ while (true) {
         perror("send");
         break;
     }
+    char buffer [1024]={};
+    std::snprintf(buffer,sizeof(buffer),"%s",line.c_str());
+    
+
 }
+
 
 close(sock_fd);
 
