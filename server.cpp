@@ -7,13 +7,21 @@
 #include <cstdio>
 #include <thread>
 #include <vector>
+#include <mutex>
+#include <algorithm>
 
 std::vector <int> clients = {};
+std::mutex client_mutex;
 
 void broadcast (int sender_fd,const std::string & msg)
 {
-    
-    for (int fd : clients)
+    std::vector<int>snapshot={};
+    {
+    std::lock_guard <std::mutex> lock (client_mutex);
+    snapshot=clients;
+    }
+
+    for (int fd : snapshot)
     {
         if (fd==sender_fd) continue;
         else
@@ -22,7 +30,7 @@ void broadcast (int sender_fd,const std::string & msg)
             if(bytes<0)
             {
                 perror("send (broadcast)");
-                break;
+                continue;
             }
             
 
@@ -41,18 +49,27 @@ void handle_clients(int client_fd,std::string client_ip,int client_port)
     if(byte > 0)
     {
         buffer[byte] = '\0';
-        broadcast(client_fd,buffer);
+        std::string full_msg = "[" + client_ip + ":" + std::to_string(client_port) + "] " + std::string(buffer);
+        broadcast(client_fd, full_msg);
         std::cout << "[" << client_ip << ":" << client_port << "] "
           << buffer << " (" << byte << " bytes)\n";
     }
     else if(byte == 0)
     {
         std::cerr << "[" << client_ip << ":" << client_port << "] disconnected\n";
+        {
+        std::lock_guard<std::mutex>lock(client_mutex);
+        clients.erase(std::remove(clients.begin(),clients.end(),client_fd),clients.end());
+        }
         break;
     }
     else
     {
         perror("recv");
+        {
+        std::lock_guard<std::mutex>lock(client_mutex);
+        clients.erase(std::remove(clients.begin(),clients.end(),client_fd),clients.end());
+        }
         break;
     }
 
@@ -130,7 +147,10 @@ int main() {
     }
     int client_port = ntohs(client_addr.sin_port);
     std::cout << "Client connected from "<< client_ip<<":"<<client_port<<"\n";
+    {
+    std::lock_guard <std::mutex> lock (client_mutex);
     clients.push_back(client_fd);
+    }
      std::thread(handle_clients, client_fd, client_ip, client_port).detach();
      
    }

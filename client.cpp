@@ -6,28 +6,26 @@
 #include <netinet/in.h>
 #include <cstdio>
 #include <thread>
+
 std::string line;
 void receive_loop(int fd)
 {
-    const char * fdsock_IP="127.0.0.1";
-    sockaddr_in fd_addr{};
-    fd_addr.sin_family = AF_INET;
-    int res=inet_pton(AF_INET, fdsock_IP, &fd_addr.sin_addr);
+
     char buffer[1024];
-    char fd_IP[INET_ADDRSTRLEN];
     while(true)
     {
-        size_t bytes=recv(fd, buffer ,sizeof(buffer)-1,0);
+        ssize_t bytes=recv(fd, buffer ,sizeof(buffer)-1,0);
         if(bytes>0)
         {
         buffer[bytes]='\0';
-        std::cout<<buffer<<"From"<<inet_ntop(AF_INET,&fd_addr.sin_addr,fd_IP,sizeof(fd_IP))<<":"<<ntohs(fd_addr.sin_port);
+        std::cout<<buffer;
         }
-        if(bytes==0)
+        else if(bytes==0)
         {
-        std::cout<<"disconnected\n";
+        std::cout<<"Server disconnected\n";
+        break;
         }
-        if(bytes < 0)
+        else
         {
         perror ("recv");
         break;        
@@ -92,10 +90,7 @@ while (true) {
         perror("send");
         break;
     }
-    char buffer [1024]={};
-    std::snprintf(buffer,sizeof(buffer),"%s",line.c_str());
     
-
 }
 
 
