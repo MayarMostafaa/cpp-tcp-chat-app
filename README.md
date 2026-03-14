@@ -1,25 +1,22 @@
-# C++ TCP Chat Application (Client-Server)
+# Multithreaded TCP Chat App (C++ / Linux)
 
-A terminal-based chat application in C++ using TCP sockets and multithreading on Linux.
+A terminal-based TCP client/server chat application written in C++17 on Linux.  
+The server accepts multiple clients concurrently using threads and broadcasts messages to all connected clients.  
+Shared state (connected client sockets) is protected using a mutex for thread safety.
 
-## Planned Features
-- TCP server and client
-- Multiple client connections
-- Multithreaded server
-- Message broadcasting
-- Basic error handling
-- Thread-safe shared client handling (mutex)
+## Features
+- TCP server (`socket` → `bind` → `listen` → `accept`)
+- TCP client (`socket` → `connect`)
+- Multiple clients supported concurrently (thread-per-client model)
+- Broadcast messages: when one client sends, all other clients receive
+- Sender prefix in broadcasts: `[ip:port] message`
+- Safe client list handling with `std::mutex` + `std::lock_guard`
+- Clean disconnect handling (removes disconnected clients from list)
 
-## Tech Stack
-- C++17
-- POSIX sockets (Linux)
-- std::thread / std::mutex
-- Git + GitHub
+## Requirements
+- Linux (tested on Ubuntu)
+- `g++` with C++17 support
 
-## Status
-In progress (Day 1 setup)
-
-## Build (planned)
+## Build
 ```bash
-g++ -std=c++17 -pthread server.cpp -o server
-g++ -std=c++17 client.cpp -o client
+make
